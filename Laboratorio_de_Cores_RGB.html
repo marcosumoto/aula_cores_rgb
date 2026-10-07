@@ -1,0 +1,296 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Laboratório de Cores RGB</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@500;700;800&family=DM+Mono:wght@500&display=swap">
+<style>
+/* Layout: mesa de luz. Controles à esquerda, a cor misturada em um painel grande à direita,
+   e embaixo um "palco" preto onde três lanternas se sobrepõem como nos pixels de uma tela. */
+:root {
+  --bg: #e9edf6;
+  --panel: #ffffff;
+  --ink: #1a1e3c;
+  --muted: #58608a;
+  --line: #cfd6ea;
+  --r: #d92b33;
+  --g: #1f8f43;
+  --b: #2460e0;
+  --stage: #000000;
+  --stage-ink: #ffffff;
+  --ok: #1f8f43;
+  --display: "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+  --body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "DM Mono", ui-monospace, "Cascadia Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101226; --panel: #1b1e3d; --ink: #f1f3ff; --muted: #a9b0d6; --line: #343965;
+    --r: #ff6f6f; --g: #5fdc82; --b: #74a4ff; --ok: #5fdc82;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101226; --panel: #1b1e3d; --ink: #f1f3ff; --muted: #a9b0d6; --line: #343965;
+  --r: #ff6f6f; --g: #5fdc82; --b: #74a4ff; --ok: #5fdc82;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 17px;
+  line-height: 1.5;
+  padding-inline: 16px;
+  padding-block: 24px 40px;
+}
+.wrap { max-width: 980px; margin-inline: auto; display: flex; flex-direction: column; gap: 20px; }
+
+header h1 {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: clamp(2rem, 6vw, 3rem);
+  line-height: 1.05;
+  margin: 0;
+  text-wrap: balance;
+}
+header h1 .cr { color: var(--r); } header h1 .cg { color: var(--g); } header h1 .cb { color: var(--b); }
+header p { margin: 6px 0 0; color: var(--muted); max-width: 60ch; }
+
+.lab { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: stretch; }
+.lab > * { min-width: 0; }
+
+.controls {
+  background: var(--panel);
+  border-radius: 24px;
+  padding: 22px;
+  display: flex; flex-direction: column; gap: 22px;
+}
+.channel { display: flex; flex-direction: column; gap: 8px; }
+.channel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.channel label { font-family: var(--display); font-weight: 800; font-size: 1.5rem; line-height: 1; }
+.channel output {
+  font-family: var(--mono); font-size: 1.35rem; font-variant-numeric: tabular-nums;
+  min-width: 3ch; text-align: right;
+}
+.ch-r label, .ch-r output { color: var(--r); }
+.ch-g label, .ch-g output { color: var(--g); }
+.ch-b label, .ch-b output { color: var(--b); }
+.scale { display: flex; justify-content: space-between; font-size: .8rem; color: var(--muted); font-weight: 700; }
+
+input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 26px; margin: 0;
+  border-radius: 13px; cursor: pointer;
+  border: 2px solid var(--line);
+  background: linear-gradient(to right, #000000, var(--full));
+}
+#r { --full: #ff0000; } #g { --full: #00ff00; } #b { --full: #0000ff; }
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: #ffffff; border: 4px solid #1a1e3c;
+  box-shadow: 0 2px 6px rgba(0,0,0,.35);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #ffffff; border: 4px solid #1a1e3c;
+  box-shadow: 0 2px 6px rgba(0,0,0,.35);
+}
+input[type="range"]::-moz-range-track { background: transparent; }
+input[type="range"]:focus-visible, button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+.result { display: flex; flex-direction: column; gap: 12px; }
+.swatch {
+  flex: 1; min-height: 260px;
+  border-radius: 24px;
+  border: 2px solid var(--line);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  padding: 20px; text-align: center;
+}
+.swatch .cap { font-weight: 800; letter-spacing: .08em; text-transform: uppercase; font-size: .8rem; opacity: .85; }
+.swatch .hex { font-family: var(--mono); font-size: clamp(2.2rem, 8vw, 3.6rem); line-height: 1.1; }
+.swatch .name { font-weight: 700; font-size: 1.05rem; }
+
+.hexparts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.part {
+  background: var(--panel); border-radius: 16px; padding: 10px 8px; text-align: center;
+  font-family: var(--mono); font-variant-numeric: tabular-nums; min-width: 0;
+}
+.part b { display: block; font-size: 1.5rem; font-weight: 500; }
+.part span { font-size: .85rem; color: var(--muted); }
+.part.pr b { color: var(--r); } .part.pg b { color: var(--g); } .part.pb b { color: var(--b); }
+
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.row2 > * { min-width: 0; }
+.card { background: var(--panel); border-radius: 24px; padding: 22px; display: flex; flex-direction: column; gap: 12px; }
+.card h2 { font-family: var(--display); font-weight: 800; font-size: 1.45rem; line-height: 1.1; margin: 0; text-wrap: balance; }
+.card p { margin: 0; color: var(--muted); }
+
+.stage {
+  position: relative; width: 100%; max-width: 100%; aspect-ratio: 1.25;
+  background: var(--stage); border-radius: 18px; overflow: hidden; isolation: isolate;
+}
+.light { position: absolute; width: 48%; aspect-ratio: 1; border-radius: 50%; mix-blend-mode: screen; }
+#lr { left: 26%; top: 4%; } #lg { left: 9%; bottom: 4%; } #lb { right: 9%; bottom: 4%; }
+
+.target { display: flex; align-items: center; gap: 14px; }
+.target-chip { width: 72px; height: 72px; flex: none; border-radius: 18px; border: 2px solid var(--line); }
+.target-name { font-family: var(--display); font-weight: 800; font-size: 1.6rem; line-height: 1.1; color: var(--ink); }
+.status { font-weight: 800; color: var(--ink); min-height: 1.5em; }
+.status.win { color: var(--ok); }
+button {
+  font: inherit; font-weight: 800; cursor: pointer;
+  background: var(--ink); color: var(--bg);
+  border: 0; border-radius: 14px; padding: 12px 18px; align-self: flex-start;
+}
+
+@media (max-width: 720px) {
+  .lab, .row2 { grid-template-columns: 1fr; }
+  .swatch { min-height: 200px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .status.win { animation: pop .4s ease-out; }
+  @keyframes pop { from { transform: scale(.9); } 60% { transform: scale(1.06); } to { transform: scale(1); } }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Laboratório de Cores <span class="cr">R</span><span class="cg">G</span><span class="cb">B</span></h1>
+    <p>Toda tela mistura só três luzes: vermelha, verde e azul. Arraste as barras e veja a cor mudar na hora.</p>
+  </header>
+
+  <section class="lab" aria-label="Misturador de cores">
+    <div class="controls">
+      <div class="channel ch-r">
+        <div class="channel-head"><label for="r">Vermelho</label><output id="vr" for="r">60</output></div>
+        <input type="range" id="r" min="0" max="255" step="1" value="60">
+        <div class="scale"><span>0 apagada</span><span>255 no máximo</span></div>
+      </div>
+      <div class="channel ch-g">
+        <div class="channel-head"><label for="g">Verde</label><output id="vg" for="g">170</output></div>
+        <input type="range" id="g" min="0" max="255" step="1" value="170">
+        <div class="scale"><span>0 apagada</span><span>255 no máximo</span></div>
+      </div>
+      <div class="channel ch-b">
+        <div class="channel-head"><label for="b">Azul</label><output id="vb" for="b">255</output></div>
+        <input type="range" id="b" min="0" max="255" step="1" value="255">
+        <div class="scale"><span>0 apagada</span><span>255 no máximo</span></div>
+      </div>
+    </div>
+
+    <div class="result">
+      <div class="swatch" id="swatch" aria-live="polite">
+        <span class="cap">Cor final</span>
+        <span class="hex" id="hex">#3CAAFF</span>
+        <span class="name" id="name">Parece com azul claro</span>
+      </div>
+      <div class="hexparts" aria-label="Como o código HEX é montado">
+        <div class="part pr"><b id="hr">3C</b><span id="dr">vermelho 60</span></div>
+        <div class="part pg"><b id="hg">AA</b><span id="dg">verde 170</span></div>
+        <div class="part pb"><b id="hb">FF</b><span id="db">azul 255</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="row2">
+    <div class="card">
+      <h2>Três lanternas no escuro</h2>
+      <div class="stage" role="img" aria-label="Três círculos de luz, vermelho, verde e azul, que se sobrepõem. No meio aparece a cor final.">
+        <div class="light" id="lr"></div>
+        <div class="light" id="lg"></div>
+        <div class="light" id="lb"></div>
+      </div>
+      <p>Cada barra é uma lanterna. Onde as três luzes se encontram, no meio, aparece a cor final. Com tudo em 255 dá branco. Com tudo em 0 fica preto.</p>
+    </div>
+
+    <div class="card">
+      <h2>Desafio</h2>
+      <p>Você consegue fazer esta cor?</p>
+      <div class="target">
+        <div class="target-chip" id="tchip"></div>
+        <div class="target-name" id="tname">Amarelo</div>
+      </div>
+      <div class="status" id="status" aria-live="polite"></div>
+      <button type="button" id="next">Outro desafio</button>
+      <p>O código HEX é a mesma cor escrita de outro jeito: dois símbolos para cada luz. 00 é zero e FF é 255.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var inputs = { r: $('r'), g: $('g'), b: $('b') };
+
+  var nomes = [
+    ['preto', 0, 0, 0], ['branco', 255, 255, 255], ['cinza', 128, 128, 128],
+    ['vermelho', 255, 0, 0], ['verde', 0, 255, 0], ['azul', 0, 0, 255],
+    ['amarelo', 255, 255, 0], ['ciano', 0, 255, 255], ['magenta', 255, 0, 255],
+    ['laranja', 255, 140, 0], ['rosa', 255, 120, 190], ['roxo', 130, 0, 170],
+    ['marrom', 120, 70, 20], ['verde escuro', 0, 110, 40], ['azul escuro', 0, 0, 120],
+    ['azul claro', 90, 180, 255], ['verde claro', 150, 255, 150], ['vinho', 130, 0, 30]
+  ];
+
+  var desafios = [
+    ['Amarelo', 255, 255, 0], ['Ciano', 0, 255, 255], ['Magenta', 255, 0, 255],
+    ['Branco', 255, 255, 255], ['Laranja', 255, 140, 0], ['Rosa', 255, 120, 190],
+    ['Roxo', 130, 0, 170], ['Cinza', 128, 128, 128], ['Preto', 0, 0, 0]
+  ];
+  var atual = 0;
+
+  function hex2(n) { var s = n.toString(16).toUpperCase(); return s.length < 2 ? '0' + s : s; }
+  function dist(r, g, b, c) {
+    return Math.sqrt(Math.pow(r - c[1], 2) + Math.pow(g - c[2], 2) + Math.pow(b - c[3], 2));
+  }
+
+  function mostrarDesafio() {
+    var d = desafios[atual];
+    $('tname').textContent = d[0];
+    $('tchip').style.background = 'rgb(' + d[1] + ',' + d[2] + ',' + d[3] + ')';
+  }
+
+  function atualizar() {
+    var r = +inputs.r.value, g = +inputs.g.value, b = +inputs.b.value;
+    $('vr').textContent = r; $('vg').textContent = g; $('vb').textContent = b;
+
+    var hex = '#' + hex2(r) + hex2(g) + hex2(b);
+    var sw = $('swatch');
+    sw.style.background = hex;
+    sw.style.color = (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? '#000000' : '#ffffff';
+    $('hex').textContent = hex;
+
+    $('hr').textContent = hex2(r); $('hg').textContent = hex2(g); $('hb').textContent = hex2(b);
+    $('dr').textContent = 'vermelho ' + r; $('dg').textContent = 'verde ' + g; $('db').textContent = 'azul ' + b;
+
+    $('lr').style.background = 'rgb(' + r + ',0,0)';
+    $('lg').style.background = 'rgb(0,' + g + ',0)';
+    $('lb').style.background = 'rgb(0,0,' + b + ')';
+
+    var melhor = nomes[0], menor = Infinity;
+    for (var i = 0; i < nomes.length; i++) {
+      var d = dist(r, g, b, nomes[i]);
+      if (d < menor) { menor = d; melhor = nomes[i]; }
+    }
+    $('name').textContent = 'Parece com ' + melhor[0];
+
+    var alvo = desafios[atual], falta = dist(r, g, b, alvo), st = $('status');
+    if (falta <= 45) { st.textContent = 'Você conseguiu! Muito bem!'; st.className = 'status win'; }
+    else if (falta <= 110) { st.textContent = 'Está quase! Mexa mais um pouquinho.'; st.className = 'status'; }
+    else { st.textContent = 'Continue misturando.'; st.className = 'status'; }
+  }
+
+  inputs.r.addEventListener('input', atualizar);
+  inputs.g.addEventListener('input', atualizar);
+  inputs.b.addEventListener('input', atualizar);
+  $('next').addEventListener('click', function () {
+    atual = (atual + 1) % desafios.length;
+    mostrarDesafio(); atualizar();
+  });
+
+  mostrarDesafio();
+  atualizar();
+})();
+</script>
+
+</body></html>
